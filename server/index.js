@@ -131,6 +131,7 @@ app.get('/ingredients', async (req, res) => {
     });
 
     const ingredientSet = new Set(ingredientList);
+    ingredientSet.delete(null);
     const uniqueIngredientsList = Array.from(ingredientSet.values());
     res.status(200);
     res.send(uniqueIngredientsList);
