@@ -13,14 +13,16 @@ app.get('/', (req, res) => {
   const htmlPage = `
         <h1>Cocktail Raffle!</h1>
         <h2>API Docs - V1</h2>
-        <ul>
-            <li>/cocktail/random - returns a random cocktail.</li>
-            <li>
-                <p>/cocktail/random/ingredients - returns a random cocktail that contains all the ingredients being searched by.</p>
-                <p>Can search by one or more ingredients</p>
-                <p>e.g: /cocktail/random/ingredients?ingredient=Vermouth&ingredient=Sugar Syrup</p>
-            </li>
-        </ul>
+        <h3>/cocktail</h3>
+        <h4>/cocktail/random</h4>
+        <p>Returns a random cocktail.</p>
+        <h4>/cocktail/random/ingredients</h4>
+        <p>Returns a random cocktail that contains all the ingredients being searched by.</p>
+        <p>Can search by one or more ingredients</p>
+        <p>e.g: /cocktail/random/ingredients?ingredient=Vermouth&ingredient=Sugar Syrup</p>
+        <h3>/ingredients</h3>
+        <h4>/ingredients</h4>
+        <p>Returns all ingredients in the DB as an array</p>
     `;
   res.send(htmlPage);
 });
@@ -80,6 +82,35 @@ app.get('/cocktail/random/ingredients', async (req, res) => {
       res.status(200);
       res.send({});
     }
+  } catch (err) {
+    console.error(err);
+    res.status(500);
+    res.send([]);
+  }
+});
+
+app.get('/ingredients', async (req, res) => {
+  console.log('connected to end point');
+  try {
+    const client = await MongoClient.connect(DB_URL);
+    const db = client.db(DB_NAME);
+    const collection = db.collection(DB_COLLECTION_NAME);
+    const results = await collection
+      .find({})
+      .project({
+        _id: 0, name: 0, isAlcoholic: 0, glass: 0, instructions: 0, 'ingredients.measure': 0,
+      })
+      .toArray();
+    const ingredientList = results.flatMap((ingredientsForCocktail) => {
+      const { ingredients } = ingredientsForCocktail;
+      const ingredientStrings = ingredients.map((ingredient) => ingredient.ingredient);
+      return ingredientStrings;
+    });
+
+    const ingredientSet = new Set(ingredientList);
+    const uniqueIngredientsList = Array.from(ingredientSet.values());
+    res.status(200);
+    res.send(uniqueIngredientsList);
   } catch (err) {
     console.error(err);
     res.status(500);
