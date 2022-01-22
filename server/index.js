@@ -17,9 +17,11 @@ app.get('/', (req, res) => {
         <h4>/cocktail/random</h4>
         <p>Returns a random cocktail.</p>
         <h4>/cocktail/random/ingredients</h4>
-        <p>Returns a random cocktail that contains all the ingredients being searched by.</p>
+        <p>Returns random cocktails that contains all the ingredients being searched by.</p>
         <p>Can search by one or more ingredients</p>
-        <p>e.g: /cocktail/random/ingredients?ingredient=Vermouth&ingredient=Sugar Syrup</p>
+        <p>ingredients: name of an ingredient</p>
+        <p>count: the number of cocktails to turn</p>
+        <p>e.g: /cocktail/random/ingredients?ingredient=Vermouth&ingredient=Sugar Syrup&count=3</p>
         <h3>/ingredients</h3>
         <h4>/ingredients</h4>
         <p>Returns all ingredients in the DB as an array</p>
@@ -44,6 +46,12 @@ app.get('/cocktail/random', async (req, res) => {
 
 app.get('/cocktail/random/ingredients', async (req, res) => {
   const { ingredient } = req.query;
+  let { count } = req.query;
+  if (!count) {
+    count = 1;
+  } else {
+    count = parseInt(count, 10);
+  }
   try {
     let ingredientList;
     if (ingredient && typeof ingredient === 'string') {
@@ -63,21 +71,24 @@ app.get('/cocktail/random/ingredients', async (req, res) => {
     const collection = db.collection(DB_COLLECTION_NAME);
 
     // returns one result which contains all of the parameters queried by
-    const results = await collection.aggregate([
+    let results = await collection.aggregate([
       { $match: { 'ingredients.ingredient': { $all: ingredientList } } },
-      { $sample: { size: 1 } },
+      { $sample: { size: count } },
     ]).toArray();
 
     if (results.length > 0) {
-      let result = results[0];
-      // calculate percentage of ingredients needed vs ingredients you have
-      const percentageMatch = ingredientList.length / result.ingredients.length;
-      result = {
-        ...result,
-        percentageMatch,
-      };
+      results = results.map((result) => {
+        // calculate percentage of ingredients needed vs ingredients you have
+        const percentageMatch = ingredientList.length / result.ingredients.length;
+        const resultWithPercentageMatch = {
+          ...result,
+          percentageMatch,
+        };
+        return resultWithPercentageMatch;
+      });
+
       res.status(200);
-      res.send(result);
+      res.send(results);
     } else {
       res.status(200);
       res.send({});
