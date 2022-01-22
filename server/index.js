@@ -10,18 +10,65 @@ const app = express();
 const port = 3000;
 
 app.get('/', (req, res) => {
-    res.send('<h1>Cocktail Raffle!</h1><ul><li>/cocktail/random - returns a random cocktail</li></ul>');
+    const htmlPage = `
+        <h1>Cocktail Raffle!</h1>
+        <h2>API Docs - v1</h2>
+        <ul>
+            <li>/cocktail/random - returns a random cocktail.</li>
+            <li>
+                <p>/cocktail/random/ingredients - returns a random cocktail that contains all the ingredients being searched by.</p>
+                <p>Can search by one or more ingredients</p>
+                <p>e.g: /cocktail/random/ingredients?ingredient=Vermouth&ingredient=Sugar Syrup</p>
+            </li>
+        </ul>
+    `
+    res.send(htmlPage);
 })
 
 app.get('/cocktail/random', async (req, res) => {
-    try{
+    try {
         const client = await MongoClient.connect(DB_URL);
         const db = client.db(DB_NAME);
         const collection = db.collection(DB_COLLECTION_NAME);
-        const results = await collection.aggregate([{ $sample: { size: 1 }}]).toArray();
+        const results = await collection.aggregate([{ $sample: { size: 1 } }]).toArray();
         res.status(200);
         res.send(results);
-    }catch(err){
+    } catch (err) {
+        console.error(err);
+        res.status(500);
+        res.send({})
+    }
+});
+
+app.get('/cocktail/random/ingredients', async (req, res) => {
+    const { ingredient } = req.query;
+    try {
+        let ingredientList;
+        if(ingredient && typeof ingredient === 'string'){
+            ingredientList = [ingredient];
+        } else {
+            ingredientList = [...ingredient];
+        }
+
+        ingredientList = ingredientList.map((ingredient) => {
+            return ingredient.charAt(0).toUpperCase() + ingredient.slice(1);
+        })
+
+        const client = await MongoClient.connect(DB_URL);
+        const db = client.db(DB_NAME);
+        const collection = db.collection(DB_COLLECTION_NAME);
+        const results = await collection.aggregate([
+            { $match: { "ingredients.ingredient": { $all: ingredientList } } },
+            { $sample: { size: 1 } },
+        ]).toArray();
+        if (results.length > 0) {
+            res.status(200);
+            res.send(results);
+        } else {
+            res.status(204);
+            res.send({});
+        }
+    } catch (err) {
         console.error(err);
         res.status(500);
         res.send({})
