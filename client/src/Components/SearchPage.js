@@ -11,25 +11,29 @@ const SearchPage = (props) => {
         return await fetch('https://restcountries.com/v3.1/all')
             .then(response => response.json())
             .then(data => {
-                setIngredientList(data)
+                setIngredientList([])
                 setIngredientListDefault(data)
-
-            });}
+    });}
     
     const updateInput = async (input) => {
         const filtered = ingredientListDefault.filter(ingredient => {
             return ingredient.name.common.toLowerCase().includes(input.toLowerCase())
         })
+
+        if (input===''){
+            setIngredientList([])
+        } else {
+            setIngredientList(filtered);
+        }
         setInput(input);
-        setIngredientList(filtered);
     }
 
     useEffect( () => {fetchData()},[]);
 
     return (
         <>
-            <h1>Ingredient List</h1>
             <SearchBar keyword={input} setKeyword={updateInput}/>
+            <h1>Ingredient List</h1>
             <IngredientList ingredientList={ingredientList}/>
         </>
     );
