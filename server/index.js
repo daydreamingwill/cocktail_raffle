@@ -12,7 +12,7 @@ const port = 3000;
 app.get('/', (req, res) => {
     const htmlPage = `
         <h1>Cocktail Raffle!</h1>
-        <h2>API Docs - v1</h2>
+        <h2>API Docs - V1</h2>
         <ul>
             <li>/cocktail/random - returns a random cocktail.</li>
             <li>
@@ -57,21 +57,31 @@ app.get('/cocktail/random/ingredients', async (req, res) => {
         const client = await MongoClient.connect(DB_URL);
         const db = client.db(DB_NAME);
         const collection = db.collection(DB_COLLECTION_NAME);
-        const results = await collection.aggregate([
+        
+        // returns one result which contains all of the parameters queried by
+        let results = await collection.aggregate([
             { $match: { "ingredients.ingredient": { $all: ingredientList } } },
             { $sample: { size: 1 } },
         ]).toArray();
+
         if (results.length > 0) {
+            let result = results[0]
+            // calculate percentage of ingredients needed vs ingredients you have
+            const percentageMatch = ingredientList.length / result.ingredients.length;
+            result = {
+                ...result,
+                percentageMatch
+            }
             res.status(200);
-            res.send(results);
+            res.send(result);
         } else {
-            res.status(204);
+            res.status(200);
             res.send({});
         }
     } catch (err) {
         console.error(err);
         res.status(500);
-        res.send({})
+        res.send([])
     }
 });
 
