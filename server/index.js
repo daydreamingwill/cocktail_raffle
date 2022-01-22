@@ -10,15 +10,22 @@ const app = express();
 const port = 3000;
 
 app.get('/', (req, res) => {
-    res.send('<h1>Cocktail Raffle!</h1><ul><li>/getRandomCocktail - returns a random cocktail</li></ul>');
+    res.send('<h1>Cocktail Raffle!</h1><ul><li>/cocktail/random - returns a random cocktail</li></ul>');
 })
 
-app.get('/getRandomCocktail', async (req, res) => {
-    const client = await MongoClient.connect(DB_URL);
-    const db = client.db(DB_NAME);
-    const collection = db.collection(DB_COLLECTION_NAME);
-    const results = await collection.aggregate([{ $sample: { size: 1 }}]).toArray();
-    res.send(results);
+app.get('/cocktail/random', async (req, res) => {
+    try{
+        const client = await MongoClient.connect(DB_URL);
+        const db = client.db(DB_NAME);
+        const collection = db.collection(DB_COLLECTION_NAME);
+        const results = await collection.aggregate([{ $sample: { size: 1 }}]).toArray();
+        res.status(200);
+        res.send(results);
+    }catch(err){
+        console.error(err);
+        res.status(500);
+        res.send({})
+    }
 });
 
 app.listen(port, () => {
