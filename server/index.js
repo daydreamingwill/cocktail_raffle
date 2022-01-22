@@ -7,7 +7,7 @@ const DB_URL = `mongodb://${DB_HOST}/${DB_PORT}`;
 const DB_NAME = 'cocktail_db';
 const DB_COLLECTION_NAME = 'cocktails';
 const app = express();
-const port = 3000;
+const port = 3001;
 
 app.get('/', (req, res) => {
   const htmlPage = `
