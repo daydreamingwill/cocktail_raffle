@@ -9,6 +9,11 @@ const DB_COLLECTION_NAME = 'cocktails';
 const app = express();
 const port = 3001;
 
+const parseOptionalNumberParameter = (numParameter, defaultValue) => {
+  const parsedNumberParameter = numParameter ? parseInt(numParameter, 10) : defaultValue;
+  return parsedNumberParameter;
+};
+
 app.get('/', (req, res) => {
   const htmlPage = `
         <h1>Cocktail Raffle!</h1>
@@ -16,11 +21,13 @@ app.get('/', (req, res) => {
         <h3>/cocktail</h3>
         <h4>/cocktail/random</h4>
         <p>Returns a random cocktail.</p>
+        <p>e.g: /cocktail/random?count=3</p>
+        <p>count: the number of cocktails to return. Defaults to a value of 1</p>
         <h4>/cocktail/random/ingredients</h4>
         <p>Returns random cocktails that contains all the ingredients being searched by.</p>
         <p>Can search by one or more ingredients</p>
         <p>ingredients: name of an ingredient</p>
-        <p>count: the number of cocktails to turn</p>
+        <p>count: the number of cocktails to return. Defaults to a value of 1</p>
         <p>e.g: /cocktail/random/ingredients?ingredient=Vermouth&ingredient=Sugar Syrup&count=3</p>
         <h3>/ingredients</h3>
         <h4>/ingredients</h4>
@@ -30,11 +37,13 @@ app.get('/', (req, res) => {
 });
 
 app.get('/cocktail/random', async (req, res) => {
+  let { count } = req.query;
+  count = parseOptionalNumberParameter(count, 1);
   try {
     const client = await MongoClient.connect(DB_URL);
     const db = client.db(DB_NAME);
     const collection = db.collection(DB_COLLECTION_NAME);
-    const results = await collection.aggregate([{ $sample: { size: 1 } }]).toArray();
+    const results = await collection.aggregate([{ $sample: { size: count } }]).toArray();
     res.status(200);
     res.send(results);
   } catch (err) {
@@ -47,11 +56,7 @@ app.get('/cocktail/random', async (req, res) => {
 app.get('/cocktail/random/ingredients', async (req, res) => {
   const { ingredient } = req.query;
   let { count } = req.query;
-  if (!count) {
-    count = 1;
-  } else {
-    count = parseInt(count, 10);
-  }
+  count = parseOptionalNumberParameter(count, 1);
   try {
     let ingredientList;
     if (ingredient && typeof ingredient === 'string') {
@@ -91,7 +96,7 @@ app.get('/cocktail/random/ingredients', async (req, res) => {
       res.send(results);
     } else {
       res.status(200);
-      res.send({});
+      res.send([]);
     }
   } catch (err) {
     console.error(err);
