@@ -6,8 +6,8 @@ const IngredientList = ({ingredientList=[]}) => {
             {ingredientList.map((data,index) => {
                 if (data) {
                     return (
-                        <div key={data.name.common}>
-                            <h1>{data.name.common}</h1>
+                        <div key={data}>
+                            <h1>{data}</h1>
                         </div>
                     )
                 }

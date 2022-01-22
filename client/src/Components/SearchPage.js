@@ -8,7 +8,7 @@ const SearchPage = (props) => {
     const [ingredientList, setIngredientList] = useState();
 
     const fetchData = async () => {
-        return await fetch('https://restcountries.com/v3.1/all')
+        return await fetch('http://localhost:3001/ingredients')
             .then(response => response.json())
             .then(data => {
                 setIngredientList([])
@@ -17,7 +17,7 @@ const SearchPage = (props) => {
     
     const updateInput = async (input) => {
         const filtered = ingredientListDefault.filter(ingredient => {
-            return ingredient.name.common.toLowerCase().includes(input.toLowerCase())
+            return ingredient.toLowerCase().includes(input.toLowerCase())
         })
 
         if (input===''){
